@@ -2,9 +2,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-# =========================
-# Связующая таблица (добавить)
-# =========================
 child_parent = db.Table(
     'child_parent',
     db.Column('child_id', db.Integer, db.ForeignKey('childhood.children.id'), primary_key=True),
@@ -12,10 +9,6 @@ child_parent = db.Table(
     schema='childhood'
 )
 
-
-# =========================
-# Группы
-# =========================
 class Group(db.Model):
     __tablename__ = 'groups'
     __table_args__ = {'schema': 'childhood'}
@@ -23,14 +16,9 @@ class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     group_number = db.Column(db.String(20), nullable=False)
 
-    # Связи
     children = db.relationship('Child', back_populates='group')
     educators = db.relationship('Educator', back_populates='group')
 
-
-# =========================
-# Дети
-# =========================
 class Child(db.Model):
     __tablename__ = 'children'
     __table_args__ = {'schema': 'childhood'}
@@ -43,16 +31,11 @@ class Child(db.Model):
         db.ForeignKey('childhood.groups.id')
     )
 
-    # Связи
     group = db.relationship('Group', back_populates='children')
     parents = db.relationship('Parent', secondary=child_parent, back_populates='children')
     attendances = db.relationship('Attendance', back_populates='child')
     payments = db.relationship('Payment', back_populates='child')
 
-
-# =========================
-# Родители (ИСПРАВЛЕНО)
-# =========================
 class Parent(db.Model):
     __tablename__ = 'parents'
     __table_args__ = {'schema': 'childhood'}
@@ -61,16 +44,8 @@ class Parent(db.Model):
     full_name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20))
 
-    # УДАЛИТЬ это поле - его нет в БД:
-    # child_id = db.Column(db.Integer, db.ForeignKey('childhood.children.id'))
-
-    # ИСПРАВИТЬ связь - теперь многие-ко-многим:
     children = db.relationship('Child', secondary=child_parent, back_populates='parents')
 
-
-# =========================
-# Воспитатели
-# =========================
 class Educator(db.Model):
     __tablename__ = 'educators'
     __table_args__ = {'schema': 'childhood'}
@@ -80,20 +55,8 @@ class Educator(db.Model):
     phone = db.Column(db.String(20))
     experience = db.Column(db.Integer)
     hire_date = db.Column(db.Date)
-
-    # У вас в БД нет поля group_id в таблице educators!
-    # Связь с группами идет через таблицу group_educator
-    # УДАЛИТЬ эти строки:
-    # group_id = db.Column(db.Integer, db.ForeignKey('childhood.groups.id'))
-    # group = db.relationship('Group')
-
-    # ПРАВИЛЬНАЯ связь многие-ко-многим с группами:
     groups = db.relationship('Group', secondary='childhood.group_educator', back_populates='educators')
 
-
-# =========================
-# Связующая таблица для групп и воспитателей (добавить)
-# =========================
 group_educator = db.Table(
     'group_educator',
     db.Column('group_id', db.Integer, db.ForeignKey('childhood.groups.id'), primary_key=True),
@@ -101,10 +64,6 @@ group_educator = db.Table(
     schema='childhood'
 )
 
-
-# =========================
-# Посещаемость
-# =========================
 class Attendance(db.Model):
     __tablename__ = 'attendance'
     __table_args__ = {'schema': 'childhood'}
@@ -120,10 +79,6 @@ class Attendance(db.Model):
 
     child = db.relationship('Child', back_populates='attendances')
 
-
-# =========================
-# Платежи
-# =========================
 class Payment(db.Model):
     __tablename__ = 'payments'
     __table_args__ = {'schema': 'childhood'}
@@ -139,10 +94,5 @@ class Payment(db.Model):
 
     child = db.relationship('Child', back_populates='payments')
 
-
-# =========================
-# Обновить Group (добавить связи)
-# =========================
-# Добавьте эти связи в класс Group (после его определения)
 Group.children = db.relationship('Child', back_populates='group')
 Group.educators = db.relationship('Educator', secondary=group_educator, back_populates='groups')
