@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-4 text-primary">
+    <i class="bi bi-pencil-square"></i> Редактировать родителя
+</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="full_name" class="form-label">ФИО *</label>
+        <input type="text" class="form-control" id="full_name" name="full_name" value="{{ parent.full_name }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="phone" class="form-label">Телефон</label>
+        <input type="text" class="form-control" id="phone" name="phone" value="{{ parent.phone }}">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Добавить ребенка</label>
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-10">
+                        <select id="childSelect" class="form-select">
+                            <option value="">Выберите ребенка</option>
+                            {% for child in children %}
+                            <option value="{{ child.id }}" data-name="{{ child.full_name }}" data-group="{{ child.group.group_number if child.group else 'без группы' }}">
+                                {{ child.full_name }} ({{ child.group.group_number if child.group else 'без группы' }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-success w-100" onclick="addChild()">
+                            <i class="bi bi-plus-circle"></i> Добавить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Список детей</label>
+        <div class="card">
+            <div class="card-body" id="childrenList">
+                <div class="alert alert-info mb-0" id="noChildrenMsg" {% if parent.children and parent.children|length > 0 %}style="display: none;"{% endif %}>
+                    <i class="bi bi-info-circle"></i> У родителя пока нет детей
+                </div>
+                <div id="selectedChildren">
+                    {% if parent.children %}
+                        {% for child in parent.children %}
+                        <div class="child-item mb-2 p-2 border rounded" data-child-id="{{ child.id }}">
+                            <input type="hidden" name="child_ids" value="{{ child.id }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-emoji-smile text-primary"></i>
+                                    <strong>{{ child.full_name }}</strong>
+                                    <span class="badge bg-secondary ms-2">{{ child.group.group_number if child.group else 'без группы' }}</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChild(this)">
+                                    <i class="bi bi-trash"></i> Удалить
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Сохранить
+        </button>
+        <a href="/parents" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Отмена
+        </a>
+    </div>
+</form>
+
+<style>
+.child-item {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+.child-item:hover {
+    background-color: #e9ecef;
+    transform: translateX(5px);
+}
+#childrenList {
+    max-height: 300px;
+    overflow-y: auto;
+}
+</style>
+
+<script>
+function addChild() {
+    const select = document.getElementById('childSelect');
+    const selectedOption = select.options[select.selectedIndex];
+    const childId = select.value;
+    const childName = selectedOption.getAttribute('data-name') || selectedOption.textContent.split(' (')[0];
+    const childGroup = selectedOption.getAttribute('data-group') || 'без группы';
+    
+    if (!childId) {
+        alert('Пожалуйста, выберите ребенка');
+        return;
+    }
+    
+    // Проверяем, не добавлен ли уже этот ребенок
+    const existingChildren = document.querySelectorAll('#selectedChildren input[name="child_ids"]');
+    for (let input of existingChildren) {
+        if (input.value === childId) {
+            alert('Этот ребенок уже добавлен');
+            return;
+        }
+    }
+    
+    // Скрываем сообщение "нет детей"
+    document.getElementById('noChildrenMsg').style.display = 'none';
+    
+    // Создаем элемент ребенка
+    const childDiv = document.createElement('div');
+    childDiv.className = 'child-item mb-2 p-2 border rounded';
+    childDiv.setAttribute('data-child-id', childId);
+    childDiv.innerHTML = `
+        <input type="hidden" name="child_ids" value="${childId}">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-emoji-smile text-primary"></i>
+                <strong>${escapeHtml(childName)}</strong>
+                <span class="badge bg-secondary ms-2">${escapeHtml(childGroup)}</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeChild(this)">
+                <i class="bi bi-trash"></i> Удалить
+            </button>
+        </div>
+    `;
+    
+    document.getElementById('selectedChildren').appendChild(childDiv);
+    
+    // Сбрасываем выбор
+    select.value = '';
+}
+
+function removeChild(button) {
+    const childItem = button.closest('.child-item');
+    childItem.remove();
+    
+    // Если больше нет детей, показываем сообщение
+    const remainingChildren = document.querySelectorAll('#selectedChildren .child-item');
+    if (remainingChildren.length === 0) {
+        document.getElementById('noChildrenMsg').style.display = 'block';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+
+{% endblock %}

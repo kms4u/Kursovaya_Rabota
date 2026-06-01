@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-primary">
+        <i class="bi bi-calendar-check"></i> Посещаемость
+    </h2>
+    <a href="/add_attendance" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Добавить пропуск
+    </a>
+</div>
+
+<!-- Поиск и фильтры -->
+<div class="row mb-4 g-3">
+    <div class="col-md-6">
+        <div class="position-relative">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input type="text"
+                   id="searchInput"
+                   class="form-control ps-5"
+                   placeholder="Поиск по ребенку или причине...">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select id="monthFilter" class="form-select">
+            <option value="all">📅 Все месяцы</option>
+            <option value="1">Январь</option>
+            <option value="2">Февраль</option>
+            <option value="3">Март</option>
+            <option value="4">Апрель</option>
+            <option value="5">Май</option>
+            <option value="6">Июнь</option>
+            <option value="7">Июль</option>
+            <option value="8">Август</option>
+            <option value="9">Сентябрь</option>
+            <option value="10">Октябрь</option>
+            <option value="11">Ноябрь</option>
+            <option value="12">Декабрь</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <a href="/attendance" class="btn btn-secondary w-100">
+            <i class="bi bi-arrow-repeat"></i> Сбросить фильтры
+        </a>
+    </div>
+</div>
+
+<!-- Таблица -->
+<div class="table-responsive">
+    <table class="table table-hover shadow-sm">
+        <thead>
+            <tr>
+                <th><i class="bi bi-person"></i> Ребенок</th>
+                <th><i class="bi bi-calendar-x"></i> Дата отсутствия</th>
+                <th><i class="bi bi-chat-text"></i> Причина</th>
+                <th><i class="bi bi-gear"></i> Действия</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceTable">
+            {% for item in attendance %}
+            <tr class="align-middle">
+                <td>
+                    <strong>{{ item.child.full_name }}</strong><br>
+                    <small class="text-muted">ID: {{ item.child.id }}</small>
+                </td>
+                <td>
+                    <span class="badge bg-danger">
+                        <i class="bi bi-calendar-x"></i> {{ item.absence_date.strftime('%d.%m.%Y') if item.absence_date else 'Не указана' }}
+                    </span>
+                </td>
+                <td>
+                    {% if item.reason %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-info-circle"></i> {{ item.reason }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-question-circle"></i> Не указана
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAttendance({{ item.id }})">
+                        <i class="bi bi-trash"></i> Удалить
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center py-5">
+                    <i class="bi bi-calendar-x display-1 text-muted"></i>
+                    <p class="text-muted mt-2">Нет записей о пропусках</p>
+                    <a href="/add_attendance" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Добавить первый пропуск
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+// Поиск по таблице
+const searchInput = document.getElementById('searchInput');
+const monthFilter = document.getElementById('monthFilter');
+const rows = document.querySelectorAll('#attendanceTable tr');
+
+function filterTable() {
+    const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+    const monthValue = monthFilter ? monthFilter.value : 'all';
+
+    rows.forEach(row => {
+        if (row.cells) {
+            const childName = row.cells[0]?.textContent.toLowerCase() || '';
+            const reason = row.cells[2]?.textContent.toLowerCase() || '';
+            const dateStr = row.cells[1]?.textContent || '';
+
+            // Парсим дату из формата DD.MM.YYYY
+            let rowMonth = 'all';
+            if (dateStr && dateStr !== 'Не указана') {
+                const parts = dateStr.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+                if (parts) {
+                    rowMonth = parseInt(parts[2]);
+                }
+            }
+
+            const matchesSearch = childName.includes(searchText) || reason.includes(searchText);
+            const matchesMonth = monthValue === 'all' || rowMonth == monthValue;
+
+            row.style.display = (matchesSearch && matchesMonth) ? '' : 'none';
+        }
+    });
+}
+
+if (searchInput) searchInput.addEventListener('keyup', filterTable);
+if (monthFilter) monthFilter.addEventListener('change', filterTable);
+
+// Функция удаления
+function deleteAttendance(id) {
+    if (confirm('Вы уверены, что хотите удалить эту запись?')) {
+        window.location.href = '/delete_attendance/' + id;
+    }
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-4 text-primary">
+    <i class="bi bi-calendar-plus"></i> Добавление пропуска
+</h2>
+
+<form method="POST" class="card p-4 shadow-sm border-0">
+    <div class="mb-3">
+        <label for="child_id" class="form-label fw-bold">
+            <i class="bi bi-person"></i> Ребенок *
+        </label>
+        <select name="child_id" id="child_id" class="form-select" required>
+            <option value="">Выберите ребенка</option>
+            {% for child in children %}
+            <option value="{{ child.id }}">
+                {{ child.full_name }} ({{ child.group.group_number if child.group else 'без группы' }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="absence_date" class="form-label fw-bold">
+            <i class="bi bi-calendar-x"></i> Дата отсутствия *
+        </label>
+        <input type="date"
+               name="absence_date"
+               id="absence_date"
+               class="form-control"
+               max="{{ now.strftime('%Y-%m-%d') if now else '' }}"
+               required>
+        <small class="text-muted">Выберите дату пропуска</small>
+    </div>
+
+    <div class="mb-3">
+        <label for="reason" class="form-label fw-bold">
+            <i class="bi bi-chat-text"></i> Причина *
+        </label>
+        <textarea name="reason"
+                  id="reason"
+                  class="form-control"
+                  rows="4"
+                  placeholder="Укажите причину отсутствия (например: болезнь, семейные обстоятельства и т.д.)"
+                  required></textarea>
+        <small class="text-muted">Подробно опишите причину пропуска</small>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Сохранить
+        </button>
+        <a href="/attendance" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Отмена
+        </a>
+    </div>
+</form>
+
+{% endblock %}

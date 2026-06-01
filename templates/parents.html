@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-primary">
+        <i class="bi bi-person-heart"></i> Родители
+    </h2>
+    <a href="/add_parent" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Добавить родителя
+    </a>
+</div>
+
+<!-- Поиск и фильтры -->
+<div class="row mb-4 g-3">
+    <div class="col-md-5">
+        <div class="position-relative">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input type="text"
+                   id="searchInput"
+                   class="form-control ps-5"
+                   placeholder="Поиск по ФИО, телефону или имени ребенка...">
+        </div>
+    </div>
+    <div class="col-md-5">
+        <select id="childrenFilter" class="form-select">
+            <option value="all">👨‍👩‍👧 Все родители</option>
+            <option value="with_children">✅ С детьми</option>
+            <option value="without_children">❌ Без детей</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <a href="/parents" class="btn btn-secondary w-100">
+            <i class="bi bi-arrow-repeat"></i> Сбросить
+        </a>
+    </div>
+</div>
+
+<!-- Таблица -->
+<div class="table-responsive">
+    <table class="table table-hover shadow-sm">
+        <thead>
+            <tr>
+                <th><i class="bi bi-person"></i> ФИО</th>
+                <th><i class="bi bi-telephone"></i> Телефон</th>
+                <th><i class="bi bi-people"></i> Дети</th>
+                <th><i class="bi bi-gear"></i> Действия</th>
+            </tr>
+        </thead>
+        <tbody id="parentsTable">
+            {% for parent in parents %}
+            <tr class="align-middle" data-has-children="{% if parent.children and parent.children|length > 0 %}true{% else %}false{% endif %}">
+                <td>
+                    <strong>{{ parent.full_name }}</strong><br>
+                    <small class="text-muted">ID: {{ parent.id }}</small>
+                </td>
+                <td>
+                    {% if parent.phone %}
+                        <span class="badge bg-info text-dark">
+                            <i class="bi bi-telephone-fill"></i> {{ parent.phone }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-question-circle"></i> Не указан
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if parent.children and parent.children|length > 0 %}
+                        {% for child in parent.children %}
+                            <span class="badge bg-primary mb-1">
+                                <i class="bi bi-emoji-smile"></i> {{ child.full_name }}
+                            </span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-person-x"></i> Не указаны
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/edit_parent/{{ parent.id }}" class="btn btn-sm btn-outline-warning me-1">
+                        <i class="bi bi-pencil"></i> Изменить
+                    </a>
+                    <a href="/delete_parent/{{ parent.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Вы уверены, что хотите удалить этого родителя?')">
+                        <i class="bi bi-trash"></i> Удалить
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center py-5">
+                    <i class="bi bi-people display-1 text-muted"></i>
+                    <p class="text-muted mt-2">Нет добавленных родителей</p>
+                    <a href="/add_parent" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Добавить первого родителя
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+// Поиск и фильтрация
+const searchInput = document.getElementById('searchInput');
+const childrenFilter = document.getElementById('childrenFilter');
+const rows = document.querySelectorAll('#parentsTable tr');
+
+function filterTable() {
+    const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+    const filterValue = childrenFilter ? childrenFilter.value : 'all';
+
+    rows.forEach(row => {
+        // Пропускаем строку с сообщением "Нет добавленных родителей"
+        if (row.cells && row.cells.length === 4) {
+            const fullName = row.cells[0]?.textContent.toLowerCase() || '';
+            const phone = row.cells[1]?.textContent.toLowerCase() || '';
+            const children = row.cells[2]?.textContent.toLowerCase() || '';
+
+            const matchesSearch = fullName.includes(searchText) ||
+                                 phone.includes(searchText) ||
+                                 children.includes(searchText);
+
+            // Используем data-атрибут для определения наличия детей
+            let matchesFilter = true;
+            const hasChildren = row.getAttribute('data-has-children') === 'true';
+
+            if (filterValue === 'with_children') {
+                matchesFilter = hasChildren === true;
+            } else if (filterValue === 'without_children') {
+                matchesFilter = hasChildren === false;
+            }
+
+            row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+        }
+    });
+}
+
+if (searchInput) searchInput.addEventListener('keyup', filterTable);
+if (childrenFilter) childrenFilter.addEventListener('change', filterTable);
+
+// Запускаем фильтр при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    filterTable();
+});
+</script>
+
+{% endblock %}

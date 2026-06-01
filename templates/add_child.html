@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-4 text-primary">
+    <i class="bi bi-person-plus"></i> Добавление ребенка
+</h2>
+
+<form method="POST" class="card p-4 shadow-sm border-0">
+    <div class="mb-3">
+        <label for="full_name" class="form-label fw-bold">
+            <i class="bi bi-person"></i> ФИО *
+        </label>
+        <input type="text"
+               name="full_name"
+               id="full_name"
+               class="form-control"
+               placeholder="Введите полное имя ребенка"
+               required>
+        <small class="text-muted">Например: Иванова Анна Михайловна</small>
+    </div>
+
+    <div class="mb-3">
+        <label for="birth_date" class="form-label fw-bold">
+            <i class="bi bi-calendar-heart"></i> Дата рождения *
+        </label>
+        <input type="date"
+               name="birth_date"
+               id="birth_date"
+               class="form-control"
+               max="{{ now.strftime('%Y-%m-%d') if now else '' }}"
+               required>
+        <small class="text-muted">Дата рождения ребенка</small>
+    </div>
+
+    <div class="mb-3">
+        <label for="group_id" class="form-label fw-bold">
+            <i class="bi bi-people-fill"></i> Группа *
+        </label>
+        <select name="group_id" id="group_id" class="form-select" required>
+            <option value="">Выберите группу</option>
+            {% for group in groups %}
+            <option value="{{ group.id }}">
+                Группа {{ group.group_number }}
+            </option>
+            {% endfor %}
+        </select>
+        <small class="text-muted">Выберите группу, в которую будет ходить ребенок</small>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Сохранить
+        </button>
+        <a href="/children" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Отмена
+        </a>
+    </div>
+</form>
+
+{% endblock %}

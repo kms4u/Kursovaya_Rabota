@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 class="mb-4 text-primary">
+    <i class="bi bi-pencil-square"></i> Редактировать воспитателя
+</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="full_name" class="form-label">ФИО *</label>
+        <input type="text" class="form-control" id="full_name" name="full_name" value="{{ teacher.full_name }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="phone" class="form-label">Телефон</label>
+        <input type="text" class="form-control" id="phone" name="phone" value="{{ teacher.phone }}">
+    </div>
+
+    <div class="mb-3">
+        <label for="experience" class="form-label">Стаж (лет)</label>
+        <input type="number" class="form-control" id="experience" name="experience" value="{{ teacher.experience }}">
+    </div>
+
+    <div class="mb-3">
+        <label for="hire_date" class="form-label">Дата приема *</label>
+        <input type="date" class="form-control" id="hire_date" name="hire_date" value="{{ teacher.hire_date }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Добавить группу</label>
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-10">
+                        <select id="groupSelect" class="form-select">
+                            <option value="">Выберите группу</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}" data-number="{{ group.group_number }}">
+                                Группа {{ group.group_number }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-success w-100" onclick="addGroup()">
+                            <i class="bi bi-plus-circle"></i> Добавить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Список групп</label>
+        <div class="card">
+            <div class="card-body" id="groupsList">
+                <div class="alert alert-info mb-0" id="noGroupsMsg" {% if teacher.groups and teacher.groups|length > 0 %}style="display: none;"{% endif %}>
+                    <i class="bi bi-info-circle"></i> У воспитателя пока нет групп
+                </div>
+                <div id="selectedGroups">
+                    {% if teacher.groups %}
+                        {% for group in teacher.groups %}
+                        <div class="group-item mb-2 p-2 border rounded" data-group-id="{{ group.id }}">
+                            <input type="hidden" name="group_ids" value="{{ group.id }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-building text-primary"></i>
+                                    <strong>Группа {{ group.group_number }}</strong>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeGroup(this)">
+                                    <i class="bi bi-trash"></i> Удалить
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Сохранить
+        </button>
+        <a href="/teachers" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Отмена
+        </a>
+    </div>
+</form>
+
+<style>
+.group-item {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+.group-item:hover {
+    background-color: #e9ecef;
+    transform: translateX(5px);
+}
+#groupsList {
+    max-height: 300px;
+    overflow-y: auto;
+}
+</style>
+
+<script>
+function addGroup() {
+    const select = document.getElementById('groupSelect');
+    const selectedOption = select.options[select.selectedIndex];
+    const groupId = select.value;
+    const groupNumber = selectedOption.getAttribute('data-number') || selectedOption.textContent;
+
+    if (!groupId) {
+        alert('Пожалуйста, выберите группу');
+        return;
+    }
+
+    // Проверяем, не добавлена ли уже эта группа
+    const existingGroups = document.querySelectorAll('#selectedGroups input[name="group_ids"]');
+    for (let input of existingGroups) {
+        if (input.value === groupId) {
+            alert('Эта группа уже добавлена');
+            return;
+        }
+    }
+
+    // Скрываем сообщение "нет групп"
+    document.getElementById('noGroupsMsg').style.display = 'none';
+
+    // Создаем элемент группы
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'group-item mb-2 p-2 border rounded';
+    groupDiv.setAttribute('data-group-id', groupId);
+    groupDiv.innerHTML = `
+        <input type="hidden" name="group_ids" value="${groupId}">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-building text-primary"></i>
+                <strong>Группа ${escapeHtml(groupNumber)}</strong>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeGroup(this)">
+                <i class="bi bi-trash"></i> Удалить
+            </button>
+        </div>
+    `;
+
+    document.getElementById('selectedGroups').appendChild(groupDiv);
+
+    // Сбрасываем выбор
+    select.value = '';
+}
+
+function removeGroup(button) {
+    const groupItem = button.closest('.group-item');
+    groupItem.remove();
+
+    // Если больше нет групп, показываем сообщение
+    const remainingGroups = document.querySelectorAll('#selectedGroups .group-item');
+    if (remainingGroups.length === 0) {
+        document.getElementById('noGroupsMsg').style.display = 'block';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+
+{% endblock %}
