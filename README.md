@@ -19,7 +19,18 @@
 
 ## 🚀 Запуск проекта
 
-### 1. Клонирование репозитория
+### Клонирование репозитория
 ```bash
 git clone https://github.com/kms4u/Kursovaya_Rabota.git
 cd Kursovaya_Rabota
+
+# Создайте окружение и установите зависимости
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Импортируйте схему БД (в новом терминале, если psql установлен)
+# psql -U pavelsokolov -d postgres -f schema.sql
+
+# Запустите
+python app.py
